@@ -5,7 +5,7 @@ Share A Automation Doc with the whole org.
 
 # Shortcut command 
 ## CLi command to trigger
-`aws ssm start-automation-execution --document-name "ShareDocumentToOrg" --document-version "\$DEFAULT" --parameters '{"AutomationAssumeRole":["arn:aws:iam::249477202910:role/test-share-doc"]}' --region us-east-1`
+`aws ssm start-automation-execution --document-name "ShareDocumentToOrg" --document-version "\$DEFAULT" --parameters '{"AutomationAssumeRole":["arn:aws:iam::xxxxxx:role/test-share-doc"]}' --region us-east-1`
 
 Automation role minimum permission is `required-permison.json` as well as the role trust `trust-policy.json`
 
