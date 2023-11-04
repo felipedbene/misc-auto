@@ -1,0 +1,64 @@
+description: Share SSM Document with all accounts in an organization
+schemaVersion: '0.3'
+assumeRole: '{{ AutomationAssumeRole }}'
+parameters:
+  AutomationAssumeRole:
+    type: String
+    description: '(Required) The ARN of the role that Automation will assume.'
+mainSteps:
+  - name: executePythonScript
+    action: 'aws:executeScript'
+    inputs:
+      Runtime: python3.6
+      Handler: script_handler
+      Script: |
+        import boto3
+
+        def script_handler(events, context):
+            # Name of the SSM document you want to share
+            document_name = "SSMDomainJoi"
+
+            # Create a client for the AWS Organizations and SSM service
+            org_client = boto3.client('organizations')
+            ssm_client = boto3.client('ssm')
+
+            # Variables to store successful and failed shares
+            successful_shares = []
+            failed_shares = []
+
+            # Function to handle pagination for list_accounts
+            def get_all_accounts():
+                accounts = []
+                paginator = org_client.get_paginator('list_accounts')
+                for page in paginator.paginate():
+                    accounts.extend(page['Accounts'])
+                return accounts
+
+            # Get a list of all account IDs from your organization
+            all_accounts = get_all_accounts()
+            account_ids = [account['Id'] for account in all_accounts]
+
+            # Loop through each account ID and share the document
+            for account_id in account_ids:
+                print(f"Sharing document with account: {account_id}")
+                try:
+                    # Share the document with the current account
+                    response = ssm_client.modify_document_permission(
+                        Name=document_name,
+                        PermissionType='Share',
+                        AccountIdsToAdd=[account_id],
+                        SharedDocumentVersion='$LATEST'
+                    )
+                    # If the share was successful, record the result
+                    successful_shares.append(account_id)
+                except Exception as e:
+                    print(f"Failed to share with account {account_id}: {e}")
+                    failed_shares.append(account_id)
+
+            # Print out the results
+            print("Successfully shared with accounts:", successful_shares)
+            print("Failed to share with accounts:", failed_shares)
+            return {
+                "successfulShares": successful_shares,
+                "failedShares": failed_shares
+            }
